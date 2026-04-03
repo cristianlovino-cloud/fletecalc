@@ -17,7 +17,13 @@
         "km": 300,
         "total_2ejes": 18500,
         "total_3ejes": 27500,
-        "paradas": ["Zárate", "Campana", "Pilar", "Palmira", "Roldán"]
+        "paradas": [
+          "Zárate",
+          "Campana",
+          "Pilar",
+          "Palmira",
+          "Roldán"
+        ]
       },
       {
         "id": "bsas_cordoba",
@@ -25,7 +31,12 @@
         "km": 700,
         "total_2ejes": 32000,
         "total_3ejes": 48000,
-        "paradas": ["Luján", "Mercedes", "Junín", "Río Cuarto"]
+        "paradas": [
+          "Luján",
+          "Mercedes",
+          "Junín",
+          "Río Cuarto"
+        ]
       },
       {
         "id": "rosario_cordoba",
@@ -33,7 +44,10 @@
         "km": 390,
         "total_2ejes": 21000,
         "total_3ejes": 31500,
-        "paradas": ["Cañada de Gómez", "Marcos Juárez"]
+        "paradas": [
+          "Cañada de Gómez",
+          "Marcos Juárez"
+        ]
       },
       {
         "id": "santafe_bsas",
@@ -41,7 +55,11 @@
         "km": 470,
         "total_2ejes": 24000,
         "total_3ejes": 36000,
-        "paradas": ["San Nicolás", "Zárate", "Tigre"]
+        "paradas": [
+          "San Nicolás",
+          "Zárate",
+          "Tigre"
+        ]
       },
       {
         "id": "rosario_paraná",
@@ -49,7 +67,9 @@
         "km": 80,
         "total_2ejes": 7500,
         "total_3ejes": 11000,
-        "paradas": ["Túnel Hernandarias"]
+        "paradas": [
+          "Túnel Hernandarias"
+        ]
       },
       {
         "id": "bsas_mendoza",
@@ -57,7 +77,11 @@
         "km": 1060,
         "total_2ejes": 45000,
         "total_3ejes": 67500,
-        "paradas": ["Luján", "San Luis", "Villa Mercedes"]
+        "paradas": [
+          "Luján",
+          "San Luis",
+          "Villa Mercedes"
+        ]
       },
       {
         "id": "bsas_rosario_rn9",
@@ -65,7 +89,10 @@
         "km": 310,
         "total_2ejes": 8000,
         "total_3ejes": 12000,
-        "paradas": ["Baradero", "San Pedro"]
+        "paradas": [
+          "Baradero",
+          "San Pedro"
+        ]
       },
       {
         "id": "cordoba_tucuman",
@@ -73,7 +100,10 @@
         "km": 560,
         "total_2ejes": 18000,
         "total_3ejes": 27000,
-        "paradas": ["Jesús María", "Santiago del Estero"]
+        "paradas": [
+          "Jesús María",
+          "Santiago del Estero"
+        ]
       },
       {
         "id": "posadas_bsas",
@@ -81,7 +111,11 @@
         "km": 1080,
         "total_2ejes": 52000,
         "total_3ejes": 78000,
-        "paradas": ["Concordia", "Gualeguaychú", "Zárate"]
+        "paradas": [
+          "Concordia",
+          "Gualeguaychú",
+          "Zárate"
+        ]
       },
       {
         "id": "personalizado",
@@ -96,5 +130,9 @@
   "indices": {
     "sueldo_minimo_chofer_larga_distancia": 850000,
     "nota_sueldo": "Referencia FADEEAC — actualizar con cada paritaria"
+  },
+  "peajes_estimados": {
+    "tasa_por_km_3ejes": 60,
+    "nota": "Estimacion promedio corredores nacionales para semi-remolque 3 ejes. Referencia abr-2026: ~$55-65/km. Actualizar segun aumentos de concesionarias."
   }
 }
