@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "ultima_actualizacion": "2025-04-03",
+    "fuente_gasoil": "Actualización manual — verificar en YPF/Shell/Axion",
+    "fuente_peajes": "Actualización manual — verificar en Aubasa/AUSA/Caminos del Río Uruguay"
+  },
+  "combustible": {
+    "gasoil_litro": 1450,
+    "nota": "Precio promedio estación de servicio, zona centro. Actualizar según región."
+  },
+  "peajes": {
+    "nota": "Valores en $ por camión de 2 ejes (semi = 3 ejes, multiplicar x1.5 aprox)",
+    "corredores": [
+      {
+        "id": "rosario_bsas",
+        "nombre": "Rosario → Buenos Aires (Autopista A001)",
+        "km": 300,
+        "total_2ejes": 18500,
+        "total_3ejes": 27500,
+        "paradas": ["Zárate", "Campana", "Pilar", "Palmira", "Roldán"]
+      },
+      {
+        "id": "bsas_cordoba",
+        "nombre": "Buenos Aires → Córdoba (RN9 / Autopista)",
+        "km": 700,
+        "total_2ejes": 32000,
+        "total_3ejes": 48000,
+        "paradas": ["Luján", "Mercedes", "Junín", "Río Cuarto"]
+      },
+      {
+        "id": "rosario_cordoba",
+        "nombre": "Rosario → Córdoba (A012)",
+        "km": 390,
+        "total_2ejes": 21000,
+        "total_3ejes": 31500,
+        "paradas": ["Cañada de Gómez", "Marcos Juárez"]
+      },
+      {
+        "id": "santafe_bsas",
+        "nombre": "Santa Fe → Buenos Aires (RN11)",
+        "km": 470,
+        "total_2ejes": 24000,
+        "total_3ejes": 36000,
+        "paradas": ["San Nicolás", "Zárate", "Tigre"]
+      },
+      {
+        "id": "rosario_paraná",
+        "nombre": "Rosario → Paraná (Túnel Subfluvial)",
+        "km": 80,
+        "total_2ejes": 7500,
+        "total_3ejes": 11000,
+        "paradas": ["Túnel Hernandarias"]
+      },
+      {
+        "id": "bsas_mendoza",
+        "nombre": "Buenos Aires → Mendoza (RN7)",
+        "km": 1060,
+        "total_2ejes": 45000,
+        "total_3ejes": 67500,
+        "paradas": ["Luján", "San Luis", "Villa Mercedes"]
+      },
+      {
+        "id": "bsas_rosario_rn9",
+        "nombre": "Buenos Aires → Rosario (RN9 libre)",
+        "km": 310,
+        "total_2ejes": 8000,
+        "total_3ejes": 12000,
+        "paradas": ["Baradero", "San Pedro"]
+      },
+      {
+        "id": "cordoba_tucuman",
+        "nombre": "Córdoba → Tucumán (RN9 Norte)",
+        "km": 560,
+        "total_2ejes": 18000,
+        "total_3ejes": 27000,
+        "paradas": ["Jesús María", "Santiago del Estero"]
+      },
+      {
+        "id": "posadas_bsas",
+        "nombre": "Posadas → Buenos Aires (RN12/14)",
+        "km": 1080,
+        "total_2ejes": 52000,
+        "total_3ejes": 78000,
+        "paradas": ["Concordia", "Gualeguaychú", "Zárate"]
+      },
+      {
+        "id": "personalizado",
+        "nombre": "Corredor personalizado",
+        "km": 0,
+        "total_2ejes": 0,
+        "total_3ejes": 0,
+        "paradas": []
+      }
+    ]
+  },
+  "indices": {
+    "sueldo_minimo_chofer_larga_distancia": 850000,
+    "nota_sueldo": "Referencia FADEEAC — actualizar con cada paritaria"
+  }
+}

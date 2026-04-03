@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleteCalc — Cotizador de Cargas</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2330;
+    --border: #2a3045;
+    --accent: #f59e0b;
+    --accent2: #3b82f6;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo-icon { font-size: 24px; }
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .precio-live {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: var(--label);
+    letter-spacing: 1px;
+  }
+  .precio-live span { color: var(--accent); font-weight: 600; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; }
+  .update-date { font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; }
+
+  .main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 20px;
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 22px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .panel:last-child { margin-bottom: 0; }
+  .panel-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--label);
+  }
+  input, select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  .input-unit { display: flex; }
+  .unit-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: none;
+    padding: 10px 8px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+  .input-unit input { border-right: none; flex: 1; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 11px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 6px;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .status { font-size: 0.72rem; color: var(--muted); margin-top: 8px; min-height: 16px; letter-spacing: 1px; }
+  .status.ok { color: var(--success); }
+  .status.err { color: var(--danger); }
+
+  .toggle-link {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 8px;
+    display: inline-block;
+  }
+  .toggle-link:hover { color: var(--accent); }
+
+  .km-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin-top: 14px;
+    border: 1px solid var(--border);
+  }
+  .km-cell {
+    background: var(--bg);
+    padding: 14px;
+    text-align: center;
+  }
+  .km-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--accent2);
+    line-height: 1;
+  }
+  .km-lbl {
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Corredor selector */
+  .corredor-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--label);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .corredor-badge span { color: var(--text); font-weight: 500; }
+
+  .sep { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  /* Checkbox */
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .check-row input[type=checkbox] {
+    width: 16px; height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    padding: 0;
+    border: none;
+  }
+  .check-row label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--label);
+  }
+
+  /* Breakdown */
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .breakdown tr { border-bottom: 1px solid var(--border); }
+  .breakdown td { padding: 8px 3px; color: var(--label); }
+  .breakdown td:last-child {
+    text-align: right;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .breakdown .sub td {
+    background: var(--surface2);
+    color: var(--text);
+    font-weight: 500;
+    padding: 9px 3px;
+  }
+  .breakdown .sub td:last-child { color: var(--accent2); }
+  .breakdown .total td {
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 600;
+    padding: 10px 3px;
+    border-top: 1px solid var(--accent);
+  }
+  .breakdown .total td:last-child { color: var(--accent); font-size: 1.1rem; }
+
+  /* Slider margen */
+  .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .slider-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  /* Precio final */
+  .precio-box {
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    padding: 22px;
+    text-align: center;
+  }
+  .precio-lbl {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .precio-valor {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .precio-moneda { font-size: 1.4rem; vertical-align: top; margin-right: 3px; }
+  .precio-sub { font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
+  .chips {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: var(--label);
+  }
+  .chip span { color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; }
+
+  /* Rentabilidad */
+  .rent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rent-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 12px;
+  }
+  .rent-lbl { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .rent-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .rent-val.green { color: var(--success); }
+  .rent-val.pct { color: var(--accent2); }
+
+  .btn-export {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--label);
+    padding: 10px 18px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+  .right-col .panel { margin-bottom: 0; }
+
+  /* Alerta precio actualizado */
+  .precio-tag {
+    display: inline-block;
+    background: var(--success);
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .precio-tag.manual {
+    background: var(--muted);
+    color: var(--text);
+  }
+
+  @media (max-width: 920px) {
+    .main { grid-template-columns: 1fr; }
+    .row3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🚛</div>
+  <h1>FleteCalc</h1>
+  <div class="header-right">
+    <div class="precio-live">
+      Gas Oil: <span id="goHeader">—</span>/lt
+      <span class="precio-tag" id="goTag" style="display:none">LIVE</span>
+    </div>
+    <div class="update-date" id="updateDate">Cargando precios...</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- LEFT -->
+  <div>
+
+    <!-- RUTA -->
+    <div class="panel">
+      <div class="panel-title">📍 Ruta</div>
+      <div class="row2">
+        <div class="field">
+          <label>Origen</label>
+          <input type="text" id="origen" placeholder="Ej: Rosario, Santa Fe">
+        </div>
+        <div class="field">
+          <label>Destino</label>
+          <input type="text" id="destino" placeholder="Ej: Buenos Aires">
+        </div>
+      </div>
+
+      <!-- Selector corredor de peajes -->
+      <div class="field">
+        <label>Corredor de peajes (preseleccionado)</label>
+        <select id="corredorSelect" onchange="aplicarCorredor()">
+          <option value="">— Seleccionar o dejar en 0 —</option>
+        </select>
+      </div>
+      <div class="corredor-badge" id="corredorInfo" style="display:none">
+        Peajes estimados: <span id="corredorPeajeVal">—</span>
+      </div>
+
+      <button class="btn-primary" id="btnRuta" onclick="calcularRuta()">⟶ Calcular Ruta</button>
+      <div class="status" id="statusRuta"></div>
+      <span class="toggle-link" id="toggleManualLink" onclick="toggleManual()">✏ Ingresar km y horas manualmente</span>
+
+      <div id="manualInputs" style="display:none; margin-top:12px;">
+        <div class="row2">
+          <div class="field">
+            <label>Distancia (km)</label>
+            <input type="number" id="kmManual" placeholder="0" oninput="fromManual()">
+          </div>
+          <div class="field">
+            <label>Horas de viaje</label>
+            <input type="number" id="hsManual" step="0.5" placeholder="0" oninput="fromManual()">
+          </div>
+        </div>
+      </div>
+
+      <div class="km-strip" id="kmStrip" style="display:none">
+        <div class="km-cell">
+          <div class="km-val" id="kmVal">—</div>
+          <div class="km-lbl">Kilómetros (ida)</div>
+        </div>
+        <div class="km-cell">
+          <div class="km-val" id="hsVal">—</div>
+          <div class="km-lbl">Horas estimadas</div>
+        </div>
+        <div class="km-cell">
+          <div class="km-val" id="kmTotalVal">—</div>
+          <div class="km-lbl">Km totales</div>
+        </div>
+      </div>
+
+      <div class="check-row" style="margin-top:12px;">
+        <input type="checkbox" id="conRegreso" onchange="recalcular()">
+        <label for="conRegreso">Incluir regreso vacío</label>
+      </div>
+    </div>
+
+    <!-- CARGA Y VEHÍCULO -->
+    <div class="panel">
+      <div class="panel-title">📦 Carga y Vehículo</div>
+      <div class="row3">
+        <div class="field">
+          <label>Tipo de carga</label>
+          <select id="tipoCarga">
+            <option>General / Palletizada</option>
+            <option>Granel seco</option>
+            <option>Refrigerada</option>
+            <option>Peligrosa</option>
+            <option>Sobredimensionada</option>
+            <option>Líquidos / Cisterna</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Peso (tn)</label>
+          <input type="number" id="peso" value="20" oninput="recalcular()">
+        </div>
+        <div class="field">
+          <label>Tipo de camión</label>
+          <select id="tipoCamion" onchange="aplicarPreset()">
+            <option value="semirremolque">Semi-remolque (30tn)</option>
+            <option value="chasis">Chasis c/ Carrocería (15tn)</option>
+            <option value="furgon">Furgón (8tn)</option>
+            <option value="camioneta">Camioneta (2tn)</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- COSTOS VARIABLES -->
+    <div class="panel">
+      <div class="panel-title">
+        ⛽ Costos Variables
+        <span id="goLiveTag" class="precio-tag" style="display:none">precio desde precios.json</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Consumo Gas Oil</label>
+          <div class="input-unit">
+            <input type="number" id="consumo" value="35" step="0.5" oninput="recalcular()">
+            <span class="unit-badge">lts/100km</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Precio Gas Oil <span id="goLiveIndicator" style="font-size:0.6rem; color:var(--success); letter-spacing:0"></span></label>
+          <div class="input-unit">
+            <input type="number" id="precioGO" value="1450" step="10" oninput="recalcular()">
+            <span class="unit-badge">$/litro</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Peajes</label>
+          <div class="input-unit">
+            <input type="number" id="peajes" value="0" step="500" oninput="recalcular()">
+            <span class="unit-badge">$/viaje</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Gastos de ruta</label>
+          <div class="input-unit">
+            <input type="number" id="gastosRuta" value="5000" step="500" oninput="recalcular()">
+            <span class="unit-badge">$/viaje</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COSTOS FIJOS -->
+    <div class="panel">
+      <div class="panel-title">📋 Costos Fijos (prorrateados)</div>
+      <div class="row2">
+        <div class="field">
+          <label>Sueldo fijo chofer</label>
+          <div class="input-unit">
+            <input type="number" id="sueldoFijo" value="850000" step="10000" oninput="recalcular()">
+            <span class="unit-badge">$/mes</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Viajes por mes</label>
+          <div class="input-unit">
+            <input type="number" id="viajesMes" value="8" oninput="recalcular()">
+            <span class="unit-badge">viajes</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Seguro del vehículo</label>
+          <div class="input-unit">
+            <input type="number" id="seguro" value="180000" step="5000" oninput="recalcular()">
+            <span class="unit-badge">$/mes</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Mantenimiento / lubric.</label>
+          <div class="input-unit">
+            <input type="number" id="manten" value="120000" step="10000" oninput="recalcular()">
+            <span class="unit-badge">$/mes</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>VTV / Patente / Admin</label>
+          <div class="input-unit">
+            <input type="number" id="admin" value="40000" step="5000" oninput="recalcular()">
+            <span class="unit-badge">$/mes</span>
+          </div>
+        </div>
+      </div>
+      <hr class="sep">
+      <div class="row2">
+        <div class="field">
+          <label>Valor del camión</label>
+          <div class="input-unit">
+            <input type="number" id="valorCamion" value="80000000" step="1000000" oninput="recalcular()">
+            <span class="unit-badge">$</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vida útil estimada</label>
+          <div class="input-unit">
+            <input type="number" id="vidaUtil" value="800000" step="10000" oninput="recalcular()">
+            <span class="unit-badge">km</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Comisión chofer</label>
+          <div class="input-unit">
+            <input type="number" id="comisionChofer" value="5" step="0.5" oninput="recalcular()">
+            <span class="unit-badge">% flete</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Seguro de carga</label>
+          <div class="input-unit">
+            <input type="number" id="seguroCarga" value="0.5" step="0.1" oninput="recalcular()">
+            <span class="unit-badge">% valor</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Valor declarado carga</label>
+          <div class="input-unit">
+            <input type="number" id="valorCarga" value="5000000" step="100000" oninput="recalcular()">
+            <span class="unit-badge">$</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <div class="panel">
+      <div class="panel-title">🧮 Desglose de Costos</div>
+      <table class="breakdown">
+        <tbody id="breakdownBody">
+          <tr><td colspan="2" style="color:var(--muted); font-size:0.8rem; padding:14px 0; text-align:center;">Ingresá origen y destino para calcular</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📈 Margen de Ganancia</div>
+      <div class="slider-row">
+        <input type="range" id="margenSlider" min="0" max="70" step="1" value="20" oninput="updateMargen(this.value)">
+        <div class="slider-val" id="margenVal">20%</div>
+      </div>
+      <div style="font-size:0.72rem; color:var(--muted); margin-top:8px;">
+        Precio = Costo ÷ (1 − margen% − comisión%)
+      </div>
+    </div>
+
+    <div class="precio-box">
+      <div class="precio-lbl">Precio de cotización</div>
+      <div class="precio-valor">
+        <span class="precio-moneda">$</span><span id="precioNum">—</span>
+      </div>
+      <div class="precio-sub" id="precioSub">Completá los datos para obtener el precio</div>
+      <div class="chips">
+        <div class="chip">$/km: <span id="pxKm">—</span></div>
+        <div class="chip">$/tn: <span id="pxTn">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">💡 Rentabilidad</div>
+      <div class="rent-grid">
+        <div class="rent-cell">
+          <div class="rent-lbl">Costo total</div>
+          <div class="rent-val" id="rCosto">—</div>
+        </div>
+        <div class="rent-cell">
+          <div class="rent-lbl">Ganancia estimada</div>
+          <div class="rent-val green" id="rGanancia">—</div>
+        </div>
+        <div class="rent-cell">
+          <div class="rent-lbl">Margen real</div>
+          <div class="rent-val pct" id="rMargenReal">—</div>
+        </div>
+        <div class="rent-cell">
+          <div class="rent-lbl">Costo por km</div>
+          <div class="rent-val" id="rCxKm">—</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-export" onclick="exportar()">⬇ Exportar Cotización (.txt)</button>
+
+  </div>
+</div>
+
+<script>
+// ── Estado global ───────────────────────────────────────────────
+let kmIda = 0, horasViaje = 0, manualMode = false;
+let preciosData = null;
+
+const PRESETS = {
+  semirremolque: { consumo:35, valorCamion:80000000, vidaUtil:800000, seguro:200000 },
+  chasis:        { consumo:28, valorCamion:35000000, vidaUtil:600000, seguro:130000 },
+  furgon:        { consumo:22, valorCamion:18000000, vidaUtil:400000, seguro: 90000 },
+  camioneta:     { consumo:12, valorCamion: 8000000, vidaUtil:300000, seguro: 55000 },
+  custom: {}
+};
+
+// ── Cargar precios.json al arrancar ────────────────────────────
+async function cargarPrecios() {
+  try {
+    const r = await fetch('precios.json?t=' + Date.now());
+    if (!r.ok) throw new Error();
+    preciosData = await r.json();
+
+    // Gas Oil
+    const go = preciosData.combustible.gasoil_litro;
+    document.getElementById('precioGO').value = go;
+    document.getElementById('goHeader').textContent = '$' + go.toLocaleString('es-AR');
+    document.getElementById('goTag').style.display = 'inline';
+    document.getElementById('goLiveIndicator').textContent = '✓ desde precios.json';
+
+    // Fecha
+    document.getElementById('updateDate').textContent =
+      'Última actualización: ' + preciosData._meta.ultima_actualizacion;
+
+    // Sueldo referencia
+    if (preciosData.indices?.sueldo_minimo_chofer_larga_distancia) {
+      document.getElementById('sueldoFijo').value =
+        preciosData.indices.sueldo_minimo_chofer_larga_distancia;
+    }
+
+    // Poblar select de corredores
+    const sel = document.getElementById('corredorSelect');
+    preciosData.peajes.corredores.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nombre + (c.km ? ` (${c.km} km)` : '');
+      opt.dataset.peaje2 = c.total_2ejes;
+      opt.dataset.peaje3 = c.total_3ejes;
+      opt.dataset.km = c.km;
+      sel.appendChild(opt);
+    });
+
+    recalcular();
+  } catch(e) {
+    document.getElementById('updateDate').textContent = 'precios.json no encontrado — valores manuales';
+    document.getElementById('goLiveIndicator').textContent = '⚠ manual';
+    document.getElementById('goLiveIndicator').style.color = 'var(--muted)';
+  }
+}
+
+// ── Corredor de peajes ──────────────────────────────────────────
+function aplicarCorredor() {
+  const sel = document.getElementById('corredorSelect');
+  const opt = sel.options[sel.selectedIndex];
+  const info = document.getElementById('corredorInfo');
+
+  if (!opt.value || opt.value === 'personalizado') {
+    info.style.display = 'none';
+    return;
+  }
+
+  const tipo = document.getElementById('tipoCamion').value;
+  const es3ejes = (tipo === 'semirremolque');
+  const peajeVal = es3ejes
+    ? parseInt(opt.dataset.peaje3 || 0)
+    : parseInt(opt.dataset.peaje2 || 0);
+
+  document.getElementById('peajes').value = peajeVal;
+
+  // Si hay km del corredor y no hay km calculados, sugerir
+  const kmCorredor = parseInt(opt.dataset.km || 0);
+  if (kmCorredor > 0 && kmIda === 0) {
+    kmIda = kmCorredor;
+    horasViaje = Math.round((kmCorredor / 70) * 10) / 10;
+    mostrarKm();
+  }
+
+  info.style.display = 'flex';
+  document.getElementById('corredorPeajeVal').textContent =
+    '$' + peajeVal.toLocaleString('es-AR') + (es3ejes ? ' (3 ejes)' : ' (2 ejes)');
+
+  recalcular();
+}
+
+// ── Preset vehículo ─────────────────────────────────────────────
+function aplicarPreset() {
+  const tipo = document.getElementById('tipoCamion').value;
+  const p = PRESETS[tipo];
+  if (!p || tipo === 'custom') return;
+  if (p.consumo)     document.getElementById('consumo').value     = p.consumo;
+  if (p.valorCamion) document.getElementById('valorCamion').value = p.valorCamion;
+  if (p.vidaUtil)    document.getElementById('vidaUtil').value    = p.vidaUtil;
+  if (p.seguro)      document.getElementById('seguro').value      = p.seguro;
+  aplicarCorredor(); // re-aplicar peajes según tipo de ejes
+  recalcular();
+}
+
+// ── Toggle modo manual ──────────────────────────────────────────
+function toggleManual() {
+  manualMode = !manualMode;
+  document.getElementById('manualInputs').style.display = manualMode ? 'block' : 'none';
+  document.getElementById('toggleManualLink').textContent = manualMode
+    ? '← Usar geocodificación automática'
+    : '✏ Ingresar km y horas manualmente';
+}
+
+function fromManual() {
+  const km = parseFloat(document.getElementById('kmManual').value) || 0;
+  const hs = parseFloat(document.getElementById('hsManual').value) || 0;
+  if (km > 0) { kmIda = km; horasViaje = hs; mostrarKm(); recalcular(); }
+}
+
+// ── Calcular ruta (OSRM + Nominatim) ───────────────────────────
+async function calcularRuta() {
+  const origen  = document.getElementById('origen').value.trim();
+  const destino = document.getElementById('destino').value.trim();
+  if (!origen || !destino) return;
+
+  const btn = document.getElementById('btnRuta');
+  const status = document.getElementById('statusRuta');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Calculando...';
+  status.textContent = ''; status.className = 'status';
+
+  try {
+    const [oc, dc] = await Promise.all([geocode(origen), geocode(destino)]);
+    if (!oc || !dc) throw new Error('No se pudo geolocalizar una ciudad. Intentá con nombre más preciso.');
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${oc.lon},${oc.lat};${dc.lon},${dc.lat}?overview=false`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data.routes?.[0]) throw new Error('No se encontró ruta entre los puntos.');
+
+    kmIda = Math.round(data.routes[0].distance / 1000);
+    horasViaje = Math.round((kmIda / 70) * 10) / 10; // ~70km/h promedio cargado
+
+    mostrarKm();
+    status.textContent = `✓ ${origen} → ${destino} calculado`;
+    status.className = 'status ok';
+    recalcular();
+  } catch(e) {
+    status.textContent = '✗ ' + e.message;
+    status.className = 'status err';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⟶ Calcular Ruta';
+  }
+}
+
+async function geocode(lugar) {
+  const q = encodeURIComponent(lugar.includes('Argentina') ? lugar : lugar + ', Argentina');
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+    headers: { 'Accept-Language': 'es' }
+  });
+  const d = await r.json();
+  return d.length ? { lat: d[0].lat, lon: d[0].lon } : null;
+}
+
+function mostrarKm() {
+  const reg = document.getElementById('conRegreso').checked;
+  const kmTot = reg ? kmIda * 2 : kmIda;
+  document.getElementById('kmVal').textContent     = kmIda.toLocaleString('es-AR');
+  document.getElementById('hsVal').textContent     = fmtHs(horasViaje);
+  document.getElementById('kmTotalVal').textContent= kmTot.toLocaleString('es-AR');
+  document.getElementById('kmStrip').style.display = 'grid';
+}
+
+function fmtHs(h) {
+  const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+  return mm > 0 ? `${hh}h ${mm}m` : `${hh}h`;
+}
+
+function updateMargen(v) {
+  document.getElementById('margenVal').textContent = v + '%';
+  recalcular();
+}
+
+// ── CÁLCULO PRINCIPAL ───────────────────────────────────────────
+function recalcular() {
+  if (kmIda <= 0) return;
+
+  const reg = document.getElementById('conRegreso').checked;
+  const km  = reg ? kmIda * 2 : kmIda;
+
+  const consumo    = +document.getElementById('consumo').value    || 0;
+  const precioGO   = +document.getElementById('precioGO').value   || 0;
+  const peajes     = +document.getElementById('peajes').value     || 0;
+  const gastosRuta = +document.getElementById('gastosRuta').value || 0;
+  const sueldoFijo = +document.getElementById('sueldoFijo').value || 0;
+  const viajesMes  = +document.getElementById('viajesMes').value  || 1;
+  const seguro     = +document.getElementById('seguro').value     || 0;
+  const valorCam   = +document.getElementById('valorCamion').value|| 0;
+  const vidaUtil   = +document.getElementById('vidaUtil').value   || 1;
+  const admin      = +document.getElementById('admin').value      || 0;
+  const manten     = +document.getElementById('manten').value     || 0;
+  const comPct     = +document.getElementById('comisionChofer').value || 0;
+  const segCgPct   = +document.getElementById('seguroCarga').value   || 0;
+  const valorCarga = +document.getElementById('valorCarga').value    || 0;
+  const peso       = +document.getElementById('peso').value          || 1;
+  const margen     = +document.getElementById('margenSlider').value / 100;
+
+  // Variables
+  const cComb      = (km / 100) * consumo * precioGO;
+  // Fijos prorrateados
+  const cSueldo    = sueldoFijo / viajesMes;
+  const cSeguro    = seguro / viajesMes;
+  const cAmort     = (km / vidaUtil) * valorCam;
+  const cAdmin     = admin / viajesMes;
+  const cManten    = manten / viajesMes;
+  const cSegCg     = (segCgPct / 100) * valorCarga;
+
+  const costoBase = cComb + peajes + gastosRuta + cSueldo + cSeguro + cAmort + cAdmin + cManten + cSegCg;
+
+  // precio = costoBase / (1 - margen - comision%) — algebraico
+  const c = comPct / 100;
+  const denom = 1 - margen - c;
+  if (denom <= 0) { alert('Margen + comisión ≥ 100% — no es posible calcular.'); return; }
+  const precio       = costoBase / denom;
+  const comChofer    = precio * c;
+  const costoTotal   = costoBase + comChofer;
+  const ganancia     = precio - costoTotal;
+  const margenReal   = (ganancia / precio) * 100;
+
+  // Breakdown
+  const fmt = n => '$ ' + Math.round(n).toLocaleString('es-AR');
+  const rows = [
+    ['Combustible',               fmt(cComb)],
+    ['Peajes',                    fmt(peajes)],
+    ['Gastos de ruta / viáticos', fmt(gastosRuta)],
+    ['Sueldo chofer (prorrat.)',  fmt(cSueldo)],
+    ['Seguro vehículo (prorrat.)',fmt(cSeguro)],
+    ['Amortización',             fmt(cAmort)],
+    ['VTV / Patente / Admin',    fmt(cAdmin)],
+    ['Mantenimiento',            fmt(cManten)],
+    ['Seguro de carga',          fmt(cSegCg)],
+    [null, null], // sub
+    ['Comisión chofer (' + comPct + '%)', fmt(comChofer)],
+    [null, null, 'total'], // total
+  ];
+
+  const tbody = document.getElementById('breakdownBody');
+  tbody.innerHTML = '';
+  let afterSub = false, afterTotal = false;
+
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    if (r[0] === null && r[2] === 'total') {
+      tr.className = 'total';
+      tr.innerHTML = `<td>COSTO TOTAL</td><td>${fmt(costoTotal)}</td>`;
+      afterTotal = true;
+    } else if (r[0] === null) {
+      tr.className = 'sub';
+      tr.innerHTML = `<td>Subtotal sin comisión</td><td>${fmt(costoBase)}</td>`;
+    } else {
+      tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+
+  // Precio final
+  document.getElementById('precioNum').textContent = Math.round(precio).toLocaleString('es-AR');
+  document.getElementById('precioSub').textContent =
+    `Margen ${(margen*100).toFixed(0)}% — ${km.toLocaleString('es-AR')} km totales`;
+  document.getElementById('pxKm').textContent = '$ ' + Math.round(precio / km).toLocaleString('es-AR');
+  document.getElementById('pxTn').textContent = '$ ' + Math.round(precio / peso).toLocaleString('es-AR');
+
+  // Rentabilidad
+  document.getElementById('rCosto').textContent    = fmt(costoTotal);
+  document.getElementById('rGanancia').textContent = fmt(ganancia);
+  document.getElementById('rMargenReal').textContent= margenReal.toFixed(1) + '%';
+  document.getElementById('rCxKm').textContent     = '$ ' + Math.round(costoTotal / km).toLocaleString('es-AR') + '/km';
+
+  mostrarKm(); // sincronizar strip si cambió regreso
+}
+
+// ── Export ──────────────────────────────────────────────────────
+function exportar() {
+  const origen  = document.getElementById('origen').value || '—';
+  const destino = document.getElementById('destino').value || '—';
+  const precio  = document.getElementById('precioNum').textContent;
+  const costo   = document.getElementById('rCosto').textContent;
+  const ganancia= document.getElementById('rGanancia').textContent;
+  const margen  = document.getElementById('margenVal').textContent;
+  const km      = document.getElementById('kmVal').textContent;
+  const tipo    = document.getElementById('tipoCamion').options[document.getElementById('tipoCamion').selectedIndex].text;
+  const peso    = document.getElementById('peso').value;
+  const reg     = document.getElementById('conRegreso').checked ? ' (con regreso)' : '';
+  const fecha   = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const go      = document.getElementById('precioGO').value;
+
+  const txt = [
+    '╔══════════════════════════════════════╗',
+    '║      COTIZACIÓN DE FLETE — FleteCalc ║',
+    '╚══════════════════════════════════════╝',
+    '',
+    `Fecha:         ${fecha}`,
+    `Ruta:          ${origen} → ${destino}${reg}`,
+    `Distancia:     ${km} km (ida)`,
+    `Vehículo:      ${tipo}`,
+    `Carga:         ${peso} tn`,
+    `Gas Oil:       $${parseFloat(go).toLocaleString('es-AR')}/lt`,
+    '',
+    '──────────────────────────────────────',
+    ` Costo total:   ${costo}`,
+    ` Margen:        ${margen}`,
+    ` Ganancia:      ${ganancia}`,
+    '──────────────────────────────────────',
+    ` PRECIO COTIZADO:  $${precio}`,
+    '──────────────────────────────────────',
+    '',
+    'Cotización válida por 48hs sujeto a variaciones',
+    'de combustible y peajes.',
+    'Generado con FleteCalc.'
+  ].join('\n');
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cotizacion-${origen.replace(/[^a-z0-9]/gi,'_')}-${destino.replace(/[^a-z0-9]/gi,'_')}-${fecha.replace(/\//g,'-')}.txt`;
+  a.click();
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+cargarPrecios();
+</script>
+</body>
+</html>
