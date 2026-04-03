@@ -702,6 +702,61 @@ const PRESETS = {
   custom: {}
 };
 
+// ── Helpers: inputs con formato de miles ────────────────────────
+// IDs que usan números grandes y necesitan formato con puntos
+const IDS_FORMATO = ['sueldoFijo','seguro','manten','admin','valorCamion','vidaUtil','valorCarga','peajes','gastosRuta'];
+
+// Obtener valor numérico limpio de un input (sea formateado o no)
+function getVal(id) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  // Remover puntos de miles (separador argentino) y convertir coma decimal
+  const raw = el.value.replace(/\./g, '').replace(',', '.');
+  return parseFloat(raw) || 0;
+}
+
+// Formatear un número con puntos de miles al salir del campo
+function formatInput(el) {
+  const raw = el.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  if (!isNaN(num) && num > 0) {
+    // Guardar el valor numérico en dataset para poder leerlo
+    el.dataset.rawValue = num;
+    // Mostrar con separadores de miles (punto en es-AR)
+    el.value = Math.round(num).toLocaleString('es-AR');
+  }
+}
+
+// Al enfocar un campo formateado, mostrar el número limpio para editar
+function unformatInput(el) {
+  const raw = el.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  if (!isNaN(num)) {
+    el.value = Math.round(num);
+  }
+}
+
+// Adjuntar eventos de formato a todos los campos grandes
+function initFormatInputs() {
+  IDS_FORMATO.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Formato inicial
+    formatInput(el);
+    el.addEventListener('focus', () => unformatInput(el));
+    el.addEventListener('blur',  () => { formatInput(el); recalcular(); });
+    el.addEventListener('input', () => recalcular());
+  });
+}
+
+// Función central para leer todos los valores (limpia puntos)
+function leerCampo(id) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  const raw = el.value.toString().replace(/\./g, '').replace(',', '.');
+  return parseFloat(raw) || 0;
+}
+
 // ── Cargar precios.json al arrancar ────────────────────────────
 async function cargarPrecios() {
   try {
@@ -709,16 +764,18 @@ async function cargarPrecios() {
     if (!r.ok) throw new Error();
     preciosData = await r.json();
 
-    // Gas Oil
+    // Gas Oil — cargar y formatear
     const go = preciosData.combustible.gasoil_litro;
-    document.getElementById('precioGO').value = go;
+    const goEl = document.getElementById('precioGO');
+    goEl.value = go;
+    goEl.dataset.rawValue = go;
     document.getElementById('goHeader').textContent = '$' + go.toLocaleString('es-AR');
     document.getElementById('goTag').style.display = 'inline';
     document.getElementById('goLiveIndicator').textContent = '✓ desde precios.json';
 
     // Fecha
     document.getElementById('updateDate').textContent =
-      'Última actualización: ' + preciosData._meta.ultima_actualizacion;
+      'Actualizado: ' + preciosData._meta.ultima_actualizacion;
 
     // Sueldo referencia
     if (preciosData.indices?.sueldo_minimo_chofer_larga_distancia) {
@@ -738,11 +795,15 @@ async function cargarPrecios() {
       sel.appendChild(opt);
     });
 
+    // Formatear todos los inputs grandes después de cargar
+    initFormatInputs();
     recalcular();
+
   } catch(e) {
     document.getElementById('updateDate').textContent = 'precios.json no encontrado — valores manuales';
     document.getElementById('goLiveIndicator').textContent = '⚠ manual';
     document.getElementById('goLiveIndicator').style.color = 'var(--muted)';
+    initFormatInputs();
   }
 }
 
@@ -763,7 +824,8 @@ function aplicarCorredor() {
     ? parseInt(opt.dataset.peaje3 || 0)
     : parseInt(opt.dataset.peaje2 || 0);
 
-  document.getElementById('peajes').value = peajeVal;
+  const peajesEl = document.getElementById('peajes');
+  peajesEl.value = peajeVal.toLocaleString('es-AR');
 
   // Si hay km del corredor y no hay km calculados, sugerir
   const kmCorredor = parseInt(opt.dataset.km || 0);
@@ -786,10 +848,10 @@ function aplicarPreset() {
   const p = PRESETS[tipo];
   if (!p || tipo === 'custom') return;
   if (p.consumo)     document.getElementById('consumo').value     = p.consumo;
-  if (p.valorCamion) document.getElementById('valorCamion').value = p.valorCamion;
-  if (p.vidaUtil)    document.getElementById('vidaUtil').value    = p.vidaUtil;
-  if (p.seguro)      document.getElementById('seguro').value      = p.seguro;
-  aplicarCorredor(); // re-aplicar peajes según tipo de ejes
+  if (p.valorCamion) document.getElementById('valorCamion').value = p.valorCamion.toLocaleString('es-AR');
+  if (p.vidaUtil)    document.getElementById('vidaUtil').value    = p.vidaUtil.toLocaleString('es-AR');
+  if (p.seguro)      document.getElementById('seguro').value      = p.seguro.toLocaleString('es-AR');
+  aplicarCorredor();
   recalcular();
 }
 
@@ -822,7 +884,7 @@ async function calcularRuta() {
 
   try {
     const [oc, dc] = await Promise.all([geocode(origen), geocode(destino)]);
-    if (!oc || !dc) throw new Error('No se pudo geolocalizar una ciudad. Intentá con nombre más preciso.');
+    if (!oc || !dc) throw new Error('No se pudo geolocalizar. Intentá con nombre más preciso.');
 
     const url = `https://router.project-osrm.org/route/v1/driving/${oc.lon},${oc.lat};${dc.lon},${dc.lat}?overview=false`;
     const resp = await fetch(url);
@@ -830,10 +892,10 @@ async function calcularRuta() {
     if (!data.routes?.[0]) throw new Error('No se encontró ruta entre los puntos.');
 
     kmIda = Math.round(data.routes[0].distance / 1000);
-    horasViaje = Math.round((kmIda / 70) * 10) / 10; // ~70km/h promedio cargado
+    horasViaje = Math.round((kmIda / 70) * 10) / 10;
 
     mostrarKm();
-    status.textContent = `✓ ${origen} → ${destino} calculado`;
+    status.textContent = `✓ ${origen} → ${destino} | ${kmIda.toLocaleString('es-AR')} km`;
     status.className = 'status ok';
     recalcular();
   } catch(e) {
@@ -880,80 +942,83 @@ function recalcular() {
   const reg = document.getElementById('conRegreso').checked;
   const km  = reg ? kmIda * 2 : kmIda;
 
-  const consumo    = +document.getElementById('consumo').value    || 0;
-  const precioGO   = +document.getElementById('precioGO').value   || 0;
-  const peajes     = +document.getElementById('peajes').value     || 0;
-  const gastosRuta = +document.getElementById('gastosRuta').value || 0;
-  const sueldoFijo = +document.getElementById('sueldoFijo').value || 0;
-  const viajesMes  = +document.getElementById('viajesMes').value  || 1;
-  const seguro     = +document.getElementById('seguro').value     || 0;
-  const valorCam   = +document.getElementById('valorCamion').value|| 0;
-  const vidaUtil   = +document.getElementById('vidaUtil').value   || 1;
-  const admin      = +document.getElementById('admin').value      || 0;
-  const manten     = +document.getElementById('manten').value     || 0;
-  const comPct     = +document.getElementById('comisionChofer').value || 0;
-  const segCgPct   = +document.getElementById('seguroCarga').value   || 0;
-  const valorCarga = +document.getElementById('valorCarga').value    || 0;
-  const peso       = +document.getElementById('peso').value          || 1;
+  // Leer todos los valores (leerCampo limpia puntos de formato)
+  const consumo    = leerCampo('consumo');
+  const precioGO   = leerCampo('precioGO');
+  const peajes     = leerCampo('peajes');
+  const gastosRuta = leerCampo('gastosRuta');
+  const sueldoFijo = leerCampo('sueldoFijo');
+  const viajesMes  = leerCampo('viajesMes') || 1;
+  const seguro     = leerCampo('seguro');
+  const valorCam   = leerCampo('valorCamion');
+  const vidaUtil   = leerCampo('vidaUtil') || 1;
+  const admin      = leerCampo('admin');
+  const manten     = leerCampo('manten');
+  const comPct     = leerCampo('comisionChofer');
+  const segCgPct   = leerCampo('seguroCarga');
+  const valorCarga = leerCampo('valorCarga');
+  const peso       = leerCampo('peso') || 1;
   const margen     = +document.getElementById('margenSlider').value / 100;
 
-  // Variables
-  const cComb      = (km / 100) * consumo * precioGO;
-  // Fijos prorrateados
-  const cSueldo    = sueldoFijo / viajesMes;
-  const cSeguro    = seguro / viajesMes;
-  const cAmort     = (km / vidaUtil) * valorCam;
-  const cAdmin     = admin / viajesMes;
-  const cManten    = manten / viajesMes;
-  const cSegCg     = (segCgPct / 100) * valorCarga;
+  // Cálculos
+  const cComb   = (km / 100) * consumo * precioGO;
+  const cSueldo = sueldoFijo / viajesMes;
+  const cSeguro = seguro / viajesMes;
+  const cAmort  = (km / vidaUtil) * valorCam;
+  const cAdmin  = admin / viajesMes;
+  const cManten = manten / viajesMes;
+  const cSegCg  = (segCgPct / 100) * valorCarga;
 
   const costoBase = cComb + peajes + gastosRuta + cSueldo + cSeguro + cAmort + cAdmin + cManten + cSegCg;
 
-  // precio = costoBase / (1 - margen - comision%) — algebraico
   const c = comPct / 100;
   const denom = 1 - margen - c;
-  if (denom <= 0) { alert('Margen + comisión ≥ 100% — no es posible calcular.'); return; }
-  const precio       = costoBase / denom;
-  const comChofer    = precio * c;
-  const costoTotal   = costoBase + comChofer;
-  const ganancia     = precio - costoTotal;
-  const margenReal   = (ganancia / precio) * 100;
+  if (denom <= 0) { return; } // sin alert, simplemente no actualizar
+  const precio     = costoBase / denom;
+  const comChofer  = precio * c;
+  const costoTotal = costoBase + comChofer;
+  const ganancia   = precio - costoTotal;
+  const margenReal = (ganancia / precio) * 100;
 
   // Breakdown
   const fmt = n => '$ ' + Math.round(n).toLocaleString('es-AR');
-  const rows = [
-    ['Combustible',               fmt(cComb)],
-    ['Peajes',                    fmt(peajes)],
-    ['Gastos de ruta / viáticos', fmt(gastosRuta)],
-    ['Sueldo chofer (prorrat.)',  fmt(cSueldo)],
-    ['Seguro vehículo (prorrat.)',fmt(cSeguro)],
-    ['Amortización',             fmt(cAmort)],
-    ['VTV / Patente / Admin',    fmt(cAdmin)],
-    ['Mantenimiento',            fmt(cManten)],
-    ['Seguro de carga',          fmt(cSegCg)],
-    [null, null], // sub
-    ['Comisión chofer (' + comPct + '%)', fmt(comChofer)],
-    [null, null, 'total'], // total
-  ];
-
   const tbody = document.getElementById('breakdownBody');
   tbody.innerHTML = '';
-  let afterSub = false, afterTotal = false;
 
-  rows.forEach((r, i) => {
+  const filas = [
+    ['Combustible',               cComb],
+    ['Peajes',                    peajes],
+    ['Gastos de ruta / viáticos', gastosRuta],
+    ['Sueldo chofer (prorrat.)',  cSueldo],
+    ['Seguro vehículo (prorrat.)',cSeguro],
+    ['Amortización',             cAmort],
+    ['VTV / Patente / Admin',    cAdmin],
+    ['Mantenimiento',            cManten],
+    ['Seguro de carga',          cSegCg],
+  ];
+
+  filas.forEach(([label, val]) => {
     const tr = document.createElement('tr');
-    if (r[0] === null && r[2] === 'total') {
-      tr.className = 'total';
-      tr.innerHTML = `<td>COSTO TOTAL</td><td>${fmt(costoTotal)}</td>`;
-      afterTotal = true;
-    } else if (r[0] === null) {
-      tr.className = 'sub';
-      tr.innerHTML = `<td>Subtotal sin comisión</td><td>${fmt(costoBase)}</td>`;
-    } else {
-      tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td>`;
-    }
+    tr.innerHTML = `<td>${label}</td><td>${fmt(val)}</td>`;
     tbody.appendChild(tr);
   });
+
+  // Subtotal
+  const trSub = document.createElement('tr');
+  trSub.className = 'sub';
+  trSub.innerHTML = `<td>Subtotal sin comisión</td><td>${fmt(costoBase)}</td>`;
+  tbody.appendChild(trSub);
+
+  // Comisión
+  const trCom = document.createElement('tr');
+  trCom.innerHTML = `<td>Comisión chofer (${comPct}%)</td><td>${fmt(comChofer)}</td>`;
+  tbody.appendChild(trCom);
+
+  // Total
+  const trTot = document.createElement('tr');
+  trTot.className = 'total';
+  trTot.innerHTML = `<td>COSTO TOTAL</td><td>${fmt(costoTotal)}</td>`;
+  tbody.appendChild(trTot);
 
   // Precio final
   document.getElementById('precioNum').textContent = Math.round(precio).toLocaleString('es-AR');
@@ -963,12 +1028,12 @@ function recalcular() {
   document.getElementById('pxTn').textContent = '$ ' + Math.round(precio / peso).toLocaleString('es-AR');
 
   // Rentabilidad
-  document.getElementById('rCosto').textContent    = fmt(costoTotal);
-  document.getElementById('rGanancia').textContent = fmt(ganancia);
-  document.getElementById('rMargenReal').textContent= margenReal.toFixed(1) + '%';
-  document.getElementById('rCxKm').textContent     = '$ ' + Math.round(costoTotal / km).toLocaleString('es-AR') + '/km';
+  document.getElementById('rCosto').textContent     = fmt(costoTotal);
+  document.getElementById('rGanancia').textContent  = fmt(ganancia);
+  document.getElementById('rMargenReal').textContent = margenReal.toFixed(1) + '%';
+  document.getElementById('rCxKm').textContent      = '$ ' + Math.round(costoTotal / km).toLocaleString('es-AR') + '/km';
 
-  mostrarKm(); // sincronizar strip si cambió regreso
+  mostrarKm();
 }
 
 // ── Export ──────────────────────────────────────────────────────
@@ -984,7 +1049,7 @@ function exportar() {
   const peso    = document.getElementById('peso').value;
   const reg     = document.getElementById('conRegreso').checked ? ' (con regreso)' : '';
   const fecha   = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const go      = document.getElementById('precioGO').value;
+  const go      = leerCampo('precioGO');
 
   const txt = [
     '╔══════════════════════════════════════╗',
@@ -996,7 +1061,7 @@ function exportar() {
     `Distancia:     ${km} km (ida)`,
     `Vehículo:      ${tipo}`,
     `Carga:         ${peso} tn`,
-    `Gas Oil:       $${parseFloat(go).toLocaleString('es-AR')}/lt`,
+    `Gas Oil:       $${go.toLocaleString('es-AR')}/lt`,
     '',
     '──────────────────────────────────────',
     ` Costo total:   ${costo}`,
