@@ -247,12 +247,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 
   <!-- MARGEN -->
   <div class="panel">
-    <div class="ptitle">📈 Margen de Ganancia</div>
+    <div class="ptitle">📈 Markup sobre Costo</div>
     <div class="slider-row">
-      <input type="range" id="margenSlider" min="0" max="60" step="1" value="20" oninput="updMargen(this.value)">
+      <input type="range" id="margenSlider" min="0" max="100" step="1" value="20" oninput="updMargen(this.value)">
       <div class="slider-v" id="margenV">20%</div>
     </div>
-    <div class="nota" id="descuentosNota">Precio = Costo total / (1 − margen − comisión − IIBB − Ganancias − otros)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <div style="background:var(--bg);border:1px solid var(--border);padding:9px;text-align:center;">
+        <div style="font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Markup s/ costo</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;color:var(--accent)" id="markupDisplay">20%</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);padding:9px;text-align:center;">
+        <div style="font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Equivale a margen s/ precio</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;color:var(--accent2)" id="margenPrecioDisplay">—</div>
+      </div>
+    </div>
+    <div class="nota" style="margin-top:8px;">
+      Precio = Costo × (1 + markup%) ÷ (1 − IIBB% − Ganancias% − otros% − comisión%)<br>
+      Impuestos y comisión se calculan sobre precio de venta.
+    </div>
   </div>
 
   <!-- PRECIO FINAL -->
@@ -271,10 +284,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
     <div class="ptitle">💡 Rentabilidad del Viaje</div>
     <div class="rent-grid">
       <div class="rent-cell"><div class="rl">Costo total viaje</div><div class="rv" id="rCosto">—</div></div>
-      <div class="rent-cell"><div class="rl">Ganancia estimada</div><div class="rv green" id="rGanancia">—</div></div>
+      <div class="rent-cell"><div class="rl">Ganancia neta</div><div class="rv green" id="rGanancia">—</div></div>
       <div class="rent-cell"><div class="rl">Costo $/km</div><div class="rv blue" id="rCxKm">—</div></div>
       <div class="rent-cell"><div class="rl">Precio $/km</div><div class="rv amber" id="rPxKm">—</div></div>
-      <div class="rent-cell"><div class="rl">Margen real</div><div class="rv blue" id="rMargenReal">—</div></div>
+      <div class="rent-cell"><div class="rl">Margen s/ precio</div><div class="rv blue" id="rMargenReal">—</div></div>
       <div class="rent-cell"><div class="rl">Impuestos + comisión</div><div class="rv" id="rImpCom">—</div></div>
     </div>
   </div>
@@ -427,7 +440,11 @@ function fmtHs(h) {
   return mm>0 ? `${hh}h ${mm}m` : `${hh}h`;
 }
 
-function updMargen(v) { document.getElementById('margenV').textContent = v+'%'; recalcular(); }
+function updMargen(v) {
+  document.getElementById('margenV').textContent = v+'%';
+  document.getElementById('markupDisplay').textContent = v+'%';
+  recalcular();
+}
 
 // ── CÁLCULO CENTRAL ─────────────────────────────────────────────
 function recalcular() {
@@ -482,20 +499,27 @@ function recalcular() {
   // Costo total antes de impuestos y comisión
   const costoTotal = costoBaseViaje + costoVariosViaje;
 
-  // —— PRECIO: algebraico con impuestos + comisión sobre precio ——
+  // —— PRECIO: markup sobre costo, impuestos sobre precio ——
   const comPct   = leer('comision')   / 100;
   const iibbPct  = leer('iibb')       / 100;
   const ganPct   = leer('ganancias')  / 100;
   const otrosPct = leer('otrosImp')   / 100;
-  const margen   = +document.getElementById('margenSlider').value / 100;
+  const markup   = +document.getElementById('margenSlider').value / 100;
 
-  const descuentos = comPct + iibbPct + ganPct + otrosPct + margen;
-  if (descuentos >= 1) return;
+  // Precio = costo × (1 + markup) / (1 − impuestos − comision)
+  const descImpCom = comPct + iibbPct + ganPct + otrosPct;
+  if (descImpCom >= 1) return;
 
-  const precio        = costoTotal / (1 - descuentos);
-  const ganancia      = precio * margen;
-  const impComTotal   = precio * (comPct + iibbPct + ganPct + otrosPct);
-  const margenReal    = (ganancia / precio) * 100;
+  const precioSinImp = costoTotal * (1 + markup);       // costo + ganancia bruta
+  const precio       = precioSinImp / (1 - descImpCom); // gross up por impuestos
+
+  const ganancia     = costoTotal * markup;              // ganancia neta = costo × markup%
+  const impComTotal  = precio * descImpCom;
+  const margenSPrecio = (ganancia / precio) * 100;       // margen sobre precio (para info)
+
+  // Equivalencia para mostrar en UI
+  const markupPct = markup * 100;
+  const margenEquiv = (ganancia / precio * 100);
 
   const peso = leer('peso') || 1;
 
@@ -564,16 +588,20 @@ function recalcular() {
   // —— PRECIO Y RENTABILIDAD ——
   document.getElementById('precioNum').textContent = fmtMiles(precio);
   document.getElementById('precioSub').textContent =
-    `Margen ${(margen*100).toFixed(0)}% · ${fmtMiles(kmViaje)} km · desc. totales ${(descuentos*100).toFixed(1)}%`;
+    `Markup ${markupPct.toFixed(0)}% s/costo · ${fmtMiles(kmViaje)} km · imp+com ${(descImpCom*100).toFixed(1)}%`;
   document.getElementById('pxKm').textContent = '$ ' + fmtMiles(precio / kmViaje);
   document.getElementById('pxTn').textContent = '$ ' + fmtMiles(precio / peso);
 
-  document.getElementById('rCosto').textContent    = fmt$(costoTotal);
-  document.getElementById('rGanancia').textContent = fmt$(ganancia);
-  document.getElementById('rCxKm').textContent     = '$ ' + fmtMiles(costoKm) + '/km';
-  document.getElementById('rPxKm').textContent     = '$ ' + fmtMiles(precio / kmViaje) + '/km';
-  document.getElementById('rMargenReal').textContent = margenReal.toFixed(1) + '%';
-  document.getElementById('rImpCom').textContent   = fmt$(impComTotal);
+  // Panel dual markup/margen
+  document.getElementById('markupDisplay').textContent = markupPct.toFixed(0) + '%';
+  document.getElementById('margenPrecioDisplay').textContent = margenEquiv.toFixed(1) + '%';
+
+  document.getElementById('rCosto').textContent      = fmt$(costoTotal);
+  document.getElementById('rGanancia').textContent   = fmt$(ganancia);
+  document.getElementById('rCxKm').textContent       = '$ ' + fmtMiles(costoKm) + '/km';
+  document.getElementById('rPxKm').textContent       = '$ ' + fmtMiles(precio / kmViaje) + '/km';
+  document.getElementById('rMargenReal').textContent = margenSPrecio.toFixed(1) + '%';
+  document.getElementById('rImpCom').textContent     = fmt$(impComTotal);
 
   mostrarKm();
   document.getElementById('kmMesDisplay').textContent = fmtMiles(kmMes);
