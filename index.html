@@ -388,7 +388,16 @@ function initInputs() {
   numIds.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener('input', () => { actualizarPills(); if(kmIda>0) recalcular(); });
+    el.addEventListener('input', () => {
+      // Sincronizar badge GO en header al cambiar precio
+      if (id === 'precioGO') {
+        const v = parseFloat(el.value) || 0;
+        document.getElementById('goHdr').textContent = '$ ' + Math.round(v).toLocaleString('es-AR');
+        document.getElementById('goTag').style.display = v > 0 ? 'inline' : 'none';
+        document.getElementById('updDate').textContent = 'Gas Oil: valor manual';
+      }
+      actualizarPills(); if(kmIda>0) recalcular();
+    });
     el.addEventListener('change', () => { actualizarPills(); if(kmIda>0) recalcular(); });
   });
 
